@@ -46,7 +46,29 @@ WordCount *word_counts = NULL;
  */
 int num_words(FILE* infile) {
   int num_words = 0;
-
+  char c;
+  int len = 0;
+  do
+  {
+    c = fgetc(infile);
+    if (isalpha(c) != 0)
+    {
+      if (len < MAX_WORD_LEN)
+      {
+        len++;
+      }
+      else if (len == MAX_WORD_LEN)
+      {
+        num_words++;
+        len = 1;
+      }
+    }
+    else if (len > 1)
+    {
+      num_words++;
+      len = 0;
+    }
+  } while (c != EOF);
   return num_words;
 }
 
@@ -62,6 +84,35 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
+  int len = 0;
+  char c;
+  char *word = (char *)malloc(MAX_WORD_LEN + 1);
+  do
+  {
+    c = fgetc(infile);
+    if (isalpha(c) != 0)
+    {
+      c = tolower(c);
+      if (len < MAX_WORD_LEN)
+      {
+        word[len] = c;
+        len++;
+      }
+      else if (len == MAX_WORD_LEN)
+      {
+        word[len] = '\0';
+        add_word(wclist, word);
+        word[0] = c;
+        len = 1;
+      }
+    }
+    else if (len > 1)
+    {
+      word[len] = '\0';
+      add_word(wclist, word);
+      len = 0;
+    }
+  } while (c != EOF);
   return 0;
 }
 
@@ -70,7 +121,18 @@ int count_words(WordCount **wclist, FILE *infile) {
  * Useful function: strcmp().
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return 0;
+  if (wc1->count > wc2->count)
+  {
+    return true;
+  }
+  else if (wc1->count == wc2->count)
+  {
+    return strcmp(wc1->word, wc2->word);
+  }
+  else
+  {
+    return false;
+  }
 }
 
 // In trying times, displays a helpful message.
@@ -137,6 +199,26 @@ int main (int argc, char *argv[]) {
     // At least one file specified. Useful functions: fopen(), fclose().
     // The first file can be found at argv[optind]. The last file can be
     // found at argv[argc-1].
+    for (int i = optind; i < argc; ++i)
+    {
+      infile = fopen(argv[i], "r");
+      if (infile == NULL)
+      {
+        printf("%s", "Error opening file");
+      }
+      else
+      {
+        if (count_mode)
+        {
+          total_words += num_words(infile);
+        }
+        else
+        {
+          count_words(&word_counts, infile);
+        }
+        fclose(infile);
+      }
+    }
   }
 
   if (count_mode) {
